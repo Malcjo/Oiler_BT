@@ -19,16 +19,16 @@
 
 #include "BluetoothSerial.h"
 #include <WString.h>
-#include <FastLED.h>
 #include <EEPROM.h>
 
-#define FRAMES_PER_SECOND 24
+
+
 #define EEPROM_SIZE 1
 
 
-bool gReverseDirection = false;
 
-int val = 0;
+
+int pump = 33;
 
 
 //#define USE_PIN // Uncomment this to use PIN during pairing. The pin is specified on the line below
@@ -46,28 +46,30 @@ String device_name = "Daniel is cool";
 
 BluetoothSerial SerialBT;
 
+
 void setup() {
+  pinMode(pump, OUTPUT);
   initalizeBluetooth();
 }
 
-
+void runpump(){
+  digitalWrite(pump, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(2000);                       // wait for a second
+  digitalWrite(pump, LOW);    // turn the LED off by making the voltage LOW
+}
 
 void loop() {
   if(SerialBT.available()){
     char incomingChar = SerialBT.read();
     Serial.print("Recieved: ");
     Serial.println(incomingChar);
+    runpump();
   }
 }
-
-
 
 void initalizeBluetooth() {
   Serial.begin(115200);
   SerialBT.begin(device_name);  //Bluetooth device name
   Serial.printf("The device with name \"%s\" is started.\nNow you can pair it with Bluetooth!\n", device_name.c_str());
-
+  runpump();  
 }
-
-
-

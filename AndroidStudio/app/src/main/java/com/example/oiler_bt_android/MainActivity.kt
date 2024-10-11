@@ -1,14 +1,16 @@
 package com.example.oiler_bt_android
 
 import BluetoothViewModel
+import android.bluetooth.BluetoothDevice
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -21,6 +23,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            BluetoothApp()
+            /*
             var permissionsGranted by remember { mutableStateOf(false) }
 
             RequestBluetoothPermissions { granted ->
@@ -28,13 +32,67 @@ class MainActivity : ComponentActivity() {
             }
 
             if (permissionsGranted) {
+
                 BluetoothLEDControlScreen()  // Only show screen after permissions are granted
             } else {
                 Text("Bluetooth permissions required")
             }
+            */
         }
     }
 }
+
+@Composable
+fun BluetoothApp(viewModel: BluetoothViewModel = viewModel()) {
+    var permissionsGranted by remember { mutableStateOf(false) }
+    var selectedDevice by remember { mutableStateOf<BluetoothDevice?>(null) }
+
+    // Request Bluetooth permissions
+    RequestBluetoothPermissions { granted ->
+        permissionsGranted = granted
+    }
+
+    if (permissionsGranted) {
+        if (selectedDevice == null) {
+            // Show available devices if no device is selected
+            AvailableDevicesScreen(viewModel) { device ->
+                selectedDevice = device
+                viewModel.connectToDevice(device)
+            }
+        } else {
+            // Once a device is selected, show the LED control screen
+            BluetoothLEDControlScreen(viewModel)
+        }
+    } else {
+        Text("Bluetooth permissions required")
+    }
+}
+
+@Composable
+fun AvailableDevicesScreen(viewModel: BluetoothViewModel, onDeviceSelected: (BluetoothDevice) -> Unit) {
+    val devices = viewModel.pairedDevices
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Select a Bluetooth Device:")
+        if (devices != null && devices.isNotEmpty()) {
+            LazyColumn {
+                items(devices.toList()) { device ->
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clickable { onDeviceSelected(device) }) {
+                        Text(device.name ?: "Unknown Device")
+                    }
+                }
+            }
+        } else {
+            Text("No paired Bluetooth devices found.")
+        }
+    }
+}
+
+
+
 
 @Composable
 fun BluetoothLEDControlScreen(viewModel: BluetoothViewModel = viewModel()) {

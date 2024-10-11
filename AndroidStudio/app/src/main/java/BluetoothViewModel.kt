@@ -1,9 +1,7 @@
-import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,33 +15,21 @@ class BluetoothViewModel(application: Application) : AndroidViewModel(applicatio
     private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     private var bluetoothSocket: BluetoothSocket? = null
     private var outputStream: OutputStream? = null
-    private val bluetoothDeviceName = "Your Bluetooth Device Name" // Change this to your device name
     private val uuid: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB") // Standard SPP UUID
 
-    init {
-        connectToBluetoothDevice()
-    }
+    // List of paired devices
+    val pairedDevices: Set<BluetoothDevice>?
+        get() = bluetoothAdapter?.bondedDevices
 
-    @SuppressLint("MissingPermission")
-    private fun connectToBluetoothDevice() {
-        bluetoothAdapter?.bondedDevices?.forEach { device ->
-            if (device.name == bluetoothDeviceName) {
-                connect(device)
-                return@forEach
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun connect(device: BluetoothDevice) {
+    fun connectToDevice(device: BluetoothDevice) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 bluetoothSocket = device.createRfcommSocketToServiceRecord(uuid)
                 bluetoothSocket?.connect()
                 outputStream = bluetoothSocket?.outputStream
-                Log.d("Bluetooth", "Connected to ${device.name}")
+                println("Connected to ${device.name}")
             } catch (e: IOException) {
-                Log.e("Bluetooth", "Connection failed", e)
+                println("Error: ${e.message}")
             }
         }
     }
@@ -60,9 +46,9 @@ class BluetoothViewModel(application: Application) : AndroidViewModel(applicatio
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 outputStream?.write(data.toByteArray())
-                Log.d("Bluetooth", "Sent: $data")
+                println("Sent: $data")
             } catch (e: IOException) {
-                Log.e("Bluetooth", "Error sending data", e)
+                println("Error: ${e.message}")
             }
         }
     }
@@ -72,7 +58,7 @@ class BluetoothViewModel(application: Application) : AndroidViewModel(applicatio
         try {
             bluetoothSocket?.close()
         } catch (e: IOException) {
-            Log.e("Bluetooth", "Error closing socket", e)
+            println("Error closing socket: ${e.message}")
         }
     }
 }
